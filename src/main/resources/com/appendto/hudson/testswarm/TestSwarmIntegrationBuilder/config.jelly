@@ -1,0 +1,70 @@
+<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
+
+  	<f:entry title="TestSwarm Server URL">
+		<f:textbox field="testswarmServerUrl" clazz="required" checkMessage="${%mandatory.testswarmServerUrl}" value="${instance.testswarmServerUrl}"/>
+  	</f:entry>
+  	  	
+  	<f:entry title="Job Name">
+		<f:textbox field="jobName" default="Hudson - Integration Tests" clazz="required" checkMessage="${%mandatory.jobName}" value="${instance.jobName}"/>
+  	</f:entry>
+  	
+  	<f:entry title="Your Username">
+		<f:textbox field="userName" default="testswarm" clazz="required" checkMessage="${%mandatory.userName}" value="${instance.userName}"/>
+  	</f:entry>
+  	
+  	<f:entry title="Your Auth Token">
+		<f:textbox field="authToken" default="password" clazz="required" checkMessage="${%mandatory.authToken}" value="${instance.authToken}"/>
+  	</f:entry>   
+  	
+  	<f:entry title="Number of Runs">
+		<f:textbox field="maxRuns" default="3" clazz="required" checkMessage="${%mandatory.maxRuns}" value="${instance.maxRuns}"/>
+  	</f:entry>
+  	
+	<f:entry name="chooseBrowsers" title="Choose Browsers" field="chooseBrowsers" >
+    	<select name="chooseBrowsers">
+            <option value="popular">Supported browsers</option>	    	
+        	<option value="all">All available browsers</option>
+            <option value="current">Current release of all major browsers</option>
+            <option value="gbs">Browsers currently supported in Yahoo's Graded Browser Support</option>
+            <option value="beta">Upcoming alphas/betas of popular browsers</option>
+            <option value="popularbeta">Popular browsers and their upcoming alphas/betas</option>
+        </select>
+    </f:entry>   
+
+  	<f:entry title="Polling Interval (in secs)">
+		<f:textbox field="pollingIntervalInSecs" default="10" clazz="required" checkMessage="${%mandatory.pollingIntervalInSecs}" value="${instance.pollingIntervalInSecs}"/>
+  	</f:entry>
+  	
+  	<f:entry title="Timeout Period (in mins)">
+		<f:textbox field="timeOutPeriodInMins" default="2" clazz="required" checkMessage="${%mandatory.timeOutPeriodInMins}" value="${instance.timeOutPeriodInMins}"/>
+  	</f:entry>  	  	
+	
+	<f:entry title="Test Suite">
+      <f:repeatable var="testSuiteData" name="testSuiteList" items="${instance.testSuiteList}"
+                    noAddButton="true" minimum="1">
+        <table width="100%">
+          <br/>
+          <f:entry title="Name" field="testName">
+            <f:textbox value="${testSuiteData.testName}" />
+          </f:entry>
+          <f:entry title="URL" field="testUrl">
+            <f:textbox value="${testSuiteData.testUrl}" />
+          </f:entry>          
+		  <f:entry title="Enable CacheCracker" field="testCacheCracker">
+            <f:checkbox name="testCacheCracker" checked="${testSuiteData.testCacheCracker}" default="true"/>
+          </f:entry>
+          <f:entry title="Disable Test" field="disableTest">
+            <f:checkbox name="disableTest" checked="${testSuiteData.disableTest}" />
+          </f:entry>
+		<f:entry>
+        <div align="right">
+          <input type="button" value="Add more test suites..." class="repeatable-add show-if-last"/>	
+          <input type="button" value="Delete" class="repeatable-delete show-if-not-only" style="margin-left: 1em;" />
+        </div>
+        </f:entry>
+        </table>
+      </f:repeatable>          
+	</f:entry>
+	  					
+</j:jelly>
+				

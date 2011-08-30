@@ -1,0 +1,16 @@
+You need to have Maven installed to build the plugin (use brew install maven on OSX).
+
+Once Maven is available, update your settings.xml according to https://wiki.jenkins-ci.org/display/JENKINS/Plugin+tutorial
+
+Afterwards you can build the plugin using Maven:
+
+    mvn install
+
+After the first run, use -o to speed up that process:
+
+   mvn -o install
+
+That puts a .hpi file into the target folder. Upload that to a Jenkins instance, or copy it manually to the plugins folder.
+
+Afterwards you should be able to add "TestSwarm integration" as a build step to any type of project.
+Fill in the empty fields, and a at least one testsuite. Then start a build and hope it works.

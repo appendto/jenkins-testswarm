@@ -13,4 +13,4 @@ After the first run, use -o to speed up that process:
 That puts a .hpi file into the target folder. Upload that to a Jenkins instance, or copy it manually to the plugins folder.
 
 Afterwards you should be able to add "TestSwarm integration" as a build step to any type of project.
-Fill in the empty fields, and a at least one testsuite. Then start a build and hope it works.
+Fill in the empty fields, and a at least one testsuite. Then start a build and check the console output for results.

@@ -7,6 +7,7 @@ import hudson.Util;
 import hudson.model.AbstractBuild;
 import hudson.model.AbstractProject;
 import hudson.model.BuildListener;
+import hudson.model.Environment;
 import hudson.model.Result;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.Builder;
@@ -166,7 +167,6 @@ public class TestSwarmIntegrationBuilder extends Builder {
 
 	@Override
 	public boolean perform(AbstractBuild build, Launcher launcher, BuildListener listener) throws InterruptedException, IOException{
-
 		listener.getLogger().println("");
 		listener.getLogger().println("Launching TestSwarm Integration Suite...");
 
@@ -188,7 +188,7 @@ public class TestSwarmIntegrationBuilder extends Builder {
 		}
 
 		//resolve environmental variables
-		expandRuntimeVariables(build);
+		expandRuntimeVariables(listener, build);
 
 		//check all required parameters are entered
 		if(this.getTestswarmServerUrl() == null || this.getTestswarmServerUrl().length() == 0) {
@@ -334,21 +334,19 @@ public class TestSwarmIntegrationBuilder extends Builder {
 		return true;
 	}
 
-	private void expandRuntimeVariables(AbstractBuild build) {
-
+	private void expandRuntimeVariables(BuildListener listener, AbstractBuild build) throws IOException, InterruptedException {
 		VariableResolver<String> varResolver = build.getBuildVariableResolver();
+		EnvVars env = build.getEnvironment(listener);
 		this.testswarmServerUrlCopy = Util.replaceMacro(this.getTestswarmServerUrl(), varResolver);
+		this.testswarmServerUrlCopy = Util.replaceMacro(this.testswarmServerUrlCopy, env);
 
 		for (int i = testSuiteListCopy.length - 1; i >= 0; i--) {
 			//Ignore testcase if disbled
 			if(!testSuiteListCopy[i].isDisableTest()){
-				//listener.getLogger().println("Test Url : "+Util.replaceMacro(testSuiteListCopy[i].getTestUrl(), varResolver));
 				testSuiteListCopy[i].setTestUrl(Util.replaceMacro(testSuiteListCopy[i].getTestUrl(), varResolver));
+				testSuiteListCopy[i].setTestUrl(Util.replaceMacro(testSuiteListCopy[i].getTestUrl(), env));
 			}
 		}
-
-
-
 	}
 
 	private void populateStaticDataInRequestString(StringBuffer requestStr) throws Exception {

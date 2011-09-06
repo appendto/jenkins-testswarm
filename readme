@@ -14,3 +14,13 @@ That puts a .hpi file into the target folder. Upload that to a Jenkins instance,
 
 Afterwards you should be able to add "TestSwarm integration" as a build step to any type of project.
 Fill in the empty fields, and a at least one testsuite. Then start a build and check the console output for results.
+
+Testsuite URLs can use build and enviroment variables. For example, this:
+
+    http://swarm.jquery.org/git/jquery-ui/${GIT_COMMIT}/tests/unit/autocomplete/autocomplete.html
+
+gets resolved to this:
+
+    http://swarm.jquery.org/git/jquery-ui/c1cda180a93a6c0a63cf21a68dacb54233e03d03/tests/unit/autocomplete/autocomplete.html
+
+Other environment variables are documented on the Jenkins wiki: https://wiki.jenkins-ci.org/display/JENKINS/Building+a+software+project#Buildingasoftwareproject-JenkinsSetEnvironmentVariables

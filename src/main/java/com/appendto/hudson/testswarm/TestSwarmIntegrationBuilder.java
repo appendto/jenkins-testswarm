@@ -276,9 +276,6 @@ public class TestSwarmIntegrationBuilder extends Builder {
 			//download the given json config
 			populateStaticDataInRequestString(requestStr);
 			populateTestSuites(requestStr);
-			//requestStr = frameRequestStr();
-			listener.getLogger().println("Printing encoded request ....");
-			listener.getLogger().println(requestStr.toString());
 
 			// Create connection
 			url = new URL(this.testswarmServerUrlCopy + "?" + requestStr.toString());

@@ -24,3 +24,8 @@ gets resolved to this:
     http://swarm.jquery.org/git/jquery-ui/c1cda180a93a6c0a63cf21a68dacb54233e03d03/tests/unit/autocomplete/autocomplete.html
 
 Other environment variables are documented on the Jenkins wiki: https://wiki.jenkins-ci.org/display/JENKINS/Building+a+software+project#Buildingasoftwareproject-JenkinsSetEnvironmentVariables
+
+Legalese
+--------
+Copyright 2011 appendTo
+Licensed MIT / GPL

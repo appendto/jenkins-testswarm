@@ -54,6 +54,7 @@ public class TestSwarmIntegrationBuilder extends Builder {
 
 	//job name
 	private String jobName;
+	private String jobNameCopy;
 
 	//user name
 	private String userName;
@@ -336,12 +337,16 @@ public class TestSwarmIntegrationBuilder extends Builder {
 	private void expandRuntimeVariables(BuildListener listener, AbstractBuild build) throws IOException, InterruptedException {
 		VariableResolver<String> varResolver = build.getBuildVariableResolver();
 		EnvVars env = build.getEnvironment(listener);
+		this.jobNameCopy = Util.replaceMacro(this.getJobName(), varResolver);
+		this.jobNameCopy = Util.replaceMacro(this.jobNameCopy, env);
 		this.testswarmServerUrlCopy = Util.replaceMacro(this.getTestswarmServerUrl(), varResolver);
 		this.testswarmServerUrlCopy = Util.replaceMacro(this.testswarmServerUrlCopy, env);
 
 		for (int i = testSuiteListCopy.length - 1; i >= 0; i--) {
 			//Ignore testcase if disbled
 			if(!testSuiteListCopy[i].isDisableTest()){
+				testSuiteListCopy[i].setTestName(Util.replaceMacro(testSuiteListCopy[i].getTestName(), varResolver));
+				testSuiteListCopy[i].setTestName(Util.replaceMacro(testSuiteListCopy[i].getTestName(), env));
 				testSuiteListCopy[i].setTestUrl(Util.replaceMacro(testSuiteListCopy[i].getTestUrl(), varResolver));
 				testSuiteListCopy[i].setTestUrl(Util.replaceMacro(testSuiteListCopy[i].getTestUrl(), env));
 			}
@@ -353,7 +358,7 @@ public class TestSwarmIntegrationBuilder extends Builder {
 		//Populate static data like user credentials and other properties
 		requestStr.append("client_id=").append(CLIENT_ID)
 		.append("&state=").append(STATE)
-		.append("&job_name=").append(URLEncoder.encode(getJobName(), CHAR_ENCODING))
+		.append("&job_name=").append(URLEncoder.encode(this.jobNameCopy, CHAR_ENCODING))
 		.append("&user=").append(getUserName())
 		.append("&auth=").append(getAuthToken())
 		.append("&max=").append(getMaxRuns())

@@ -13,6 +13,8 @@ import hudson.tasks.Builder;
 import hudson.util.FormValidation;
 import hudson.util.VariableResolver;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import java.io.IOException;
 import java.io.Serializable;
 import java.net.HttpURLConnection;
@@ -25,6 +27,7 @@ import java.util.Map;
 import javax.servlet.ServletException;
 
 import net.sf.json.JSONObject;
+import net.sf.json.JSONSerializer;
 
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
@@ -278,26 +281,34 @@ public class TestSwarmIntegrationBuilder extends Builder {
 			populateTestSuites(requestStr);
 
 			// Create connection
-			url = new URL(this.testswarmServerUrlCopy + "?" + requestStr.toString());
+			url = new URL(this.testswarmServerUrlCopy + "api.php?" + requestStr.toString());
 			urlConnection = (HttpURLConnection) url.openConnection();
-			urlConnection.setRequestMethod("HEAD");
+			urlConnection.setRequestMethod("POST");
 			urlConnection.setInstanceFollowRedirects(false);
 			//physically connect
 			urlConnection.connect();
 
-			Map<String, List<String>> headerFields = urlConnection.getHeaderFields();
-			//fetch redirected url
-			redirectURL =  urlConnection.getHeaderField("Location");
-			//if location is null - somewhere some thing wrong
-			if (redirectURL == null || redirectURL.trim().length() ==0) {
+			String line;
+			StringBuilder builder = new StringBuilder();
+			BufferedReader reader = new BufferedReader(new InputStreamReader( urlConnection.getInputStream() ));
+			while((line = reader.readLine()) != null) {
+				builder.append(line);
+			}
+
+			JSONObject json = (JSONObject) JSONSerializer.toJSON( builder.toString() );
+			JSONObject job = json.getJSONObject("addjob");
+			String jobId = job.getString("id");
+
+			if (jobId == null || jobId.trim().length() == 0) {
 				listener.getLogger().println("Failed to post your request to Testswarm Server");
 				listener.getLogger().println("It could be because of various reasons, one such is incorrect username or authtoken. " +
-												"So please verify it");
+												"So please verify it. Also put a tailing / in the testswarm server url.");
 				build.setResult(Result.FAILURE);
 				return false;
 			}
 
-			String jobUrl = this.testswarmServerUrlCopy + redirectURL;
+			String jobUrl = this.testswarmServerUrlCopy + "job/" + jobId;
+			String jobInfoUrl = this.testswarmServerUrlCopy + "api.php?action=job&item=" + jobId;
 			listener.getLogger().println("**************************************************************");
 			listener.getLogger().println("Your request is successfully posted to TestSwarm Server and " +
 					" you can view the result in the following URL");
@@ -305,20 +316,20 @@ public class TestSwarmIntegrationBuilder extends Builder {
 			listener.getLogger().println("**************************************************************");
 			listener.getLogger().println("");
 			listener.getLogger().println("Analyzing Test Suite Result....");
-			if (!analyzeTestSuiteResults(jobUrl, build, listener)) {
+			if (!analyzeTestSuiteResults(jobInfoUrl, build, listener)) {
 				listener.getLogger().println("Analyzing Test Suite Result COMPLETED...");
 				listener.getLogger().println("");
 
-				//listener.getLogger().println(TestSwarmUtil.getInstance().getGridText(new TestSwarmDecisionMaker().grabPage(jobUrl)));
-				listener.getLogger().println(TestSwarmUtil.getInstance().processResult(new TestSwarmDecisionMaker().grabPage(jobUrl)));
+				//listener.getLogger().println(TestSwarmUtil.getInstance().getGridText(new TestSwarmDecisionMaker().grabPage(jobInfoUrl)));
+				listener.getLogger().println(TestSwarmUtil.getInstance().processResult(new TestSwarmDecisionMaker().grabPage(jobInfoUrl)));
 				build.setResult(Result.FAILURE);
 				return false;
 			}
 			listener.getLogger().println("Analyzing Test Suite Result COMPLETED...");
 			listener.getLogger().println("");
-			//listener.getLogger().println(TestSwarmUtil.getInstance().getGridText(new TestSwarmDecisionMaker().grabPage(jobUrl)));
+			//listener.getLogger().println(TestSwarmUtil.getInstance().getGridText(new TestSwarmDecisionMaker().grabPage(jobInfoUrl)));
 			listener.getLogger().println("Result: ");
-			listener.getLogger().println(TestSwarmUtil.getInstance().processResult(new TestSwarmDecisionMaker().grabPage(jobUrl)));
+			listener.getLogger().println(TestSwarmUtil.getInstance().processResult(new TestSwarmDecisionMaker().grabPage(jobInfoUrl)));
 
 		}
 		catch(Exception ex) {
@@ -357,12 +368,12 @@ public class TestSwarmIntegrationBuilder extends Builder {
 
 		//Populate static data like user credentials and other properties
 		requestStr.append("client_id=").append(CLIENT_ID)
-		.append("&state=").append(STATE)
-		.append("&job_name=").append(URLEncoder.encode(this.jobNameCopy, CHAR_ENCODING))
-		.append("&user=").append(getUserName())
-		.append("&auth=").append(getAuthToken())
-		.append("&max=").append(getMaxRuns())
-		.append("&browsers=").append(getChooseBrowsers());
+		.append("&action=").append(STATE)
+		.append("&jobName=").append(URLEncoder.encode(this.jobNameCopy, CHAR_ENCODING))
+		.append("&authUsername=").append(getUserName())
+		.append("&authToken=").append(getAuthToken())
+		.append("&runMax=").append(getMaxRuns())
+		.append("&").append(URLEncoder.encode("browserSets[]", CHAR_ENCODING)).append("=").append(getChooseBrowsers());
 	}
 
 	private void populateTestSuites(StringBuffer requestStr) throws Exception {
@@ -381,17 +392,17 @@ public class TestSwarmIntegrationBuilder extends Builder {
 
 	private void encodeAndAppendTestSuiteUrl(StringBuffer requestStr,String testName, String testSuiteUrl, boolean cacheCrackerEnabled) throws Exception {
 
-		requestStr.append("&").append(URLEncoder.encode("suites[]", CHAR_ENCODING)).append("=")
-								.append(URLEncoder.encode(testName, CHAR_ENCODING))
-								.append("&").append(URLEncoder.encode("urls[]", CHAR_ENCODING)).append("=");
+		requestStr.append("&").append(URLEncoder.encode("runNames[]", CHAR_ENCODING)).append("=")
+		.append(URLEncoder.encode(testName, CHAR_ENCODING))
+		.append("&").append(URLEncoder.encode("runUrls[]", CHAR_ENCODING)).append("=");
 		requestStr.append(URLEncoder.encode(testSuiteUrl, CHAR_ENCODING));
 		if(cacheCrackerEnabled)
 		{
-			requestStr.append("&").append(URLEncoder.encode("cache_killer="+System.currentTimeMillis(), CHAR_ENCODING));
+			requestStr.append("&cache_killer="+System.currentTimeMillis());
 		}
 	}
 
-	private boolean analyzeTestSuiteResults(String jobUrl, AbstractBuild build, BuildListener listener)
+	private boolean analyzeTestSuiteResults(String jobInfoUrl, AbstractBuild build, BuildListener listener)
 					throws Exception
 	{
 
@@ -401,15 +412,15 @@ public class TestSwarmIntegrationBuilder extends Builder {
 		long start = System.currentTimeMillis();
 		//give testswarm 15 seconds to finish earlier activities
 		Thread.sleep(15 * 1000);
-		String html;
+		String response;
 		Map<String, Integer> results = new HashMap<String, Integer>();
 		boolean isBuildSuccessful = false;
 		Integer statusCount;
 
 		while (start + (minutesTimeOut * 60000) > System.currentTimeMillis()) {
 
-			html = this.resultsAnalyzer.grabPage(jobUrl);
-			results = this.resultsAnalyzer.parseResults(html);
+			response = this.resultsAnalyzer.grabPage(jobInfoUrl);
+			results = this.resultsAnalyzer.parseResults(response, listener);
 			for(String status : results.keySet()) {
 				statusCount = (Integer)results.get(status);
 				if (statusCount != null)
@@ -427,7 +438,23 @@ public class TestSwarmIntegrationBuilder extends Builder {
 					+ " seconds...");
 			Thread.sleep(secondsBetweenResultPolls * 1000);
 		}
+
 		listener.getLogger().println("Timed Out....");
+
+		Integer pass = results.get("passed");
+		Integer progress = results.get("progress");
+		Integer error = results.get("error");
+		Integer fail = results.get("failed");
+		Integer timeout = results.get("timedout");
+		if ( (progress == null || progress.intValue() == 0)
+				&& (timeout == null || timeout.intValue() == 0)
+					&& (fail == null || fail.intValue() == 0)
+						&& (error == null || error.intValue() == 0) && pass != null
+						&& pass.intValue() > 0) {
+
+			listener.getLogger().println("No errors, no timedout, no failed and at least one pass -> build ok");
+			return true;
+		}
 		return false;
 
 	}

@@ -283,23 +283,10 @@ public class TestSwarmIntegrationBuilder extends Builder {
 			// Create connection
 			url = new URL(this.testswarmServerUrlCopy + "api.php?" + requestStr.toString());
 			urlConnection = (HttpURLConnection) url.openConnection();
-			//urlConnection.setRequestMethod("HEAD");
 			urlConnection.setRequestMethod("POST");
 			urlConnection.setInstanceFollowRedirects(false);
 			//physically connect
 			urlConnection.connect();
-
-			//Map<String, List<String>> headerFields = urlConnection.getHeaderFields();
-			//fetch redirected url
-			//redirectURL =  urlConnection.getHeaderField("Location");
-			//if location is null - somewhere some thing wrong
-			//if (redirectURL == null || redirectURL.trim().length() ==0) {
-			//	listener.getLogger().println("Failed to post your request to Testswarm Server");
-			//	listener.getLogger().println("It could be because of various reasons, one such is incorrect username or authtoken. " +
-			//									"So please verify it");
-			//	build.setResult(Result.FAILURE);
-			//	return false;
-			//}
 
 			String line;
 			StringBuilder builder = new StringBuilder();
@@ -307,12 +294,11 @@ public class TestSwarmIntegrationBuilder extends Builder {
 			while((line = reader.readLine()) != null) {
 				builder.append(line);
 			}
-			//listener.getLogger().println(builder.toString());
 
 			JSONObject json = (JSONObject) JSONSerializer.toJSON( builder.toString() );
 			JSONObject job = json.getJSONObject("addjob");
 			String jobId = job.getString("id");
-			
+
 			if (jobId == null || jobId.trim().length() == 0) {
 				listener.getLogger().println("Failed to post your request to Testswarm Server");
 				listener.getLogger().println("It could be because of various reasons, one such is incorrect username or authtoken. " +
@@ -321,7 +307,6 @@ public class TestSwarmIntegrationBuilder extends Builder {
 				return false;
 			}
 
-			//String jobUrl = this.testswarmServerUrlCopy + redirectURL;
 			String jobUrl = this.testswarmServerUrlCopy + "job/" + jobId;
 			String jobInfoUrl = this.testswarmServerUrlCopy + "api.php?action=job&item=" + jobId;
 			listener.getLogger().println("**************************************************************");
@@ -389,13 +374,6 @@ public class TestSwarmIntegrationBuilder extends Builder {
 		.append("&authToken=").append(getAuthToken())
 		.append("&runMax=").append(getMaxRuns())
 		.append("&").append(URLEncoder.encode("browserSets[]", CHAR_ENCODING)).append("=").append(getChooseBrowsers());
-
-		//.append("&state=").append(STATE)
-		//.append("&job_name=").append(URLEncoder.encode(this.jobNameCopy, CHAR_ENCODING))
-		//.append("&user=").append(getUserName())
-		//.append("&auth=").append(getAuthToken())
-		//.append("&max=").append(getMaxRuns())
-		//.append("&browsers=").append(getChooseBrowsers());
 	}
 
 	private void populateTestSuites(StringBuffer requestStr) throws Exception {
@@ -422,15 +400,6 @@ public class TestSwarmIntegrationBuilder extends Builder {
 		{
 			requestStr.append("&cache_killer="+System.currentTimeMillis());
 		}
-
-		//requestStr.append("&").append(URLEncoder.encode("suites[]", CHAR_ENCODING)).append("=")
-		//.append(URLEncoder.encode(testName, CHAR_ENCODING))
-		//.append("&").append(URLEncoder.encode("urls[]", CHAR_ENCODING)).append("=");
-		//requestStr.append(URLEncoder.encode(testSuiteUrl, CHAR_ENCODING));
-		//if(cacheCrackerEnabled)
-		//{
-		//	requestStr.append("&").append(URLEncoder.encode("cache_killer="+System.currentTimeMillis(), CHAR_ENCODING));
-		//}
 	}
 
 	private boolean analyzeTestSuiteResults(String jobInfoUrl, AbstractBuild build, BuildListener listener)
@@ -469,12 +438,12 @@ public class TestSwarmIntegrationBuilder extends Builder {
 					+ " seconds...");
 			Thread.sleep(secondsBetweenResultPolls * 1000);
 		}
- 
+
 		listener.getLogger().println("Timed Out....");
 
 		Integer pass = results.get("passed");
 		Integer progress = results.get("progress");
-		Integer error = results.get("error");		
+		Integer error = results.get("error");
 		Integer fail = results.get("failed");
 		Integer timeout = results.get("timedout");
 		if ( (progress == null || progress.intValue() == 0)
